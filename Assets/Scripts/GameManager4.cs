@@ -75,6 +75,6 @@ public class GameManager4 : MonoBehaviour
     public void SetCurrentLV(int levelIndex)
     {
         level = levelIndex;
-        SceneManager.LoadScene(levelIndex);
+        SceneManager.LoadScene(levelIndex.ToString());
     }
 }
