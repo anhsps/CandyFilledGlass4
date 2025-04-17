@@ -4,15 +4,7 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Candy
   - InGlass
-  - Candy1
-  - Candy2
-  - Candy3
-  - Glass1
-  - Glass2
-  - Glass3
-  - Glass
   - Trap
   layers:
   - Default

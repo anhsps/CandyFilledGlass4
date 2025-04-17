@@ -5,26 +5,28 @@ using UnityEngine.EventSystems;
 
 public class CandyTap : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
+    private RectTransform rt;
     private bool isPressing;
 
     private float spawnTime = 0.13f;
     private Coroutine spawnCoroutine;
 
-    public GameObject candyPrefab;
+    [SerializeField] private GameObject candyPrefab;
 
-    //**
     private Queue<GameObject> candyPool = new Queue<GameObject>(); // Queue cho Pool
-    public int poolSize = 10;
+    private int poolSize = 10;
 
     // Start is called before the first frame update
     void Start()
-    {//**
+    {
+        rt = GetComponent<RectTransform>();
+
         // Tao Pool dtg Candy
         for (int i = 0; i < poolSize; i++)
         {
             GameObject candy = Instantiate(candyPrefab);
             candy.SetActive(false);
-            candy.GetComponent<Candy>().SetCandyTap(this);// Gan CandyTap cho moi Candy
+            candy.GetComponent<Candy>().SetCandyTap(this);
             candyPool.Enqueue(candy); // Them vao Pool
         }
     }
@@ -38,7 +40,6 @@ public class CandyTap : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     public void Tap()
     {
         Vector2 localPos;
-        RectTransform rt = GetComponent<RectTransform>();
 
         // change pos: mousePos in screen space -> local space (rt cua button)
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(rt, Input.mousePosition, Camera.main, out localPos))
@@ -46,9 +47,6 @@ public class CandyTap : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
             Vector2 randomPos = new Vector2(Random.Range(localPos.x - 20f, localPos.x + 20f), localPos.y);
             Vector2 spawnPos = rt.TransformPoint(randomPos);// pos local space -> world space
 
-            //Instantiate(candyPrefab, spawnPos, Quaternion.identity);
-
-            //**
             // Lay Candy tu Pool or tao moi
             GameObject candy = GetPooledCandy();
             candy.transform.position = spawnPos;
@@ -59,7 +57,6 @@ public class CandyTap : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     // check mousePos nam tren hcn cua rt (Button UI) ko 
     private bool IsPointerOverBtn()
     {
-        RectTransform rt = GetComponent<RectTransform>();
         return RectTransformUtility.RectangleContainsScreenPoint(rt, Input.mousePosition, Camera.main);
     }
 
@@ -83,12 +80,11 @@ public class CandyTap : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         while (isPressing)
         {
-            yield return new WaitForSeconds(spawnTime);
             if (IsPointerOverBtn()) Tap();
+            yield return new WaitForSeconds(spawnTime);
         }
     }
 
-    //**
     private GameObject GetPooledCandy()
     {
         if (candyPool.Count > 0)

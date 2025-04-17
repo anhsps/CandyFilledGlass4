@@ -224,7 +224,7 @@ GameObject:
   - component: {fileID: 5637668782943540617}
   m_Layer: 0
   m_Name: coc tim
-  m_TagString: Glass1
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -337,12 +337,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36e6f69826ba8a4479068187f50b91f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  images:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  colors:
-  - {r: 0.654902, g: 0.52156866, b: 0.7764706, a: 1}
-  - {r: 0.77254903, g: 0.45490196, b: 0.3647059, a: 1}
-  - {r: 0.4627451, g: 0.4117647, b: 0.7764706, a: 1}
-  hitCounts: 000000000000000000000000
+  glassID: 0

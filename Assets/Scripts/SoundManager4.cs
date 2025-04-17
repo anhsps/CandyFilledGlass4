@@ -1,55 +1,71 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class SoundManager4 : MonoBehaviour
+public class SoundManager4 : Singleton<SoundManager4>
 {
-    public static SoundManager4 instance { get; private set; }
     public bool soundEnabled { get; private set; }
 
-    public AudioSource broken_audio;
+    [SerializeField] private AudioClip[] audioClips;
+    private AudioSource audioSource;
 
-    [SerializeField] private AudioSource[] audioSource;
-    [SerializeField] private GameObject musicButton, muteButton;
-
-    private void Awake()
+    protected override void Awake()
     {
-        if (instance != null && instance != this)
-            Destroy(this);
-        else instance = this;
+        base.Awake();
 
+        audioSource = gameObject.AddComponent<AudioSource>();
         soundEnabled = PlayerPrefs.GetInt("SoundEnabled", 1) == 1;
+
+        if (audioClips.Length > 0) PlaySound(0);
+
         UpdateSound();
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+        SetUpButtons();
     }
 
     public void ToggleSound()
     {
         soundEnabled = !soundEnabled;
+        if (soundEnabled) PlaySound(0);
         PlayerPrefs.SetInt("SoundEnabled", soundEnabled ? 1 : 0);
         UpdateSound();
     }
 
     public void UpdateSound()
     {
-        foreach (var item in audioSource)
-            item.volume = soundEnabled ? 1f : 0f;
+        audioSource.mute = !soundEnabled;
 
-        if (musicButton && muteButton)
+        Button[] btns = FindObjectsOfType<Button>(true);// true: tim ca button bi tat + bat, false: tim button bat
+        foreach (Button btn in btns)
         {
-            musicButton.SetActive(soundEnabled);
-            muteButton.SetActive(!soundEnabled);
+            if (btn.name == "MusicButton") btn.gameObject.SetActive(soundEnabled);
+            if (btn.name == "MuteButton") btn.gameObject.SetActive(!soundEnabled);
         }
     }
+
+    private void SetUpButtons()
+    {
+        Button[] btns = FindObjectsOfType<Button>(true);
+        foreach (Button btn in btns)
+        {
+            if (btn.name == "MusicButton" || btn.name == "MuteButton")
+                btn.onClick.AddListener(ToggleSound);
+        }
+    }
+
+    // index=0 (bg), =1 (click), =2 (win), =3 (lose),...
+    public void PlaySound(int index)
+    {
+        if (!soundEnabled || index < 0 || index >= audioClips.Length || !audioClips[index]) return;
+
+        if (index == 0)
+        {
+            audioSource.clip = audioClips[0];
+            audioSource.loop = true;
+            audioSource.Play();
+        }
+        else audioSource.PlayOneShot(audioClips[index]);
+    }
+
+    public void SoundClick() => PlaySound(1);
 }

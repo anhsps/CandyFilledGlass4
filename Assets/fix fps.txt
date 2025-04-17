@@ -1,0 +1,2 @@
+Project Settings > Physics 2D > Default Contact Offset : 0.01 -> 0.03
+Candy Rigidbody2D > Collision Detection > Discrete

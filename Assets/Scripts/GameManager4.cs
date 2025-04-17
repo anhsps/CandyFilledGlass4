@@ -3,78 +3,116 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using DG.Tweening;
+using System.Threading.Tasks;
 
-public class GameManager4 : MonoBehaviour
+public class GameManager4 : Singleton<GameManager4>
 {
-    public static GameManager4 instance { get; private set; }
     public static int level = 1;
 
-    [SerializeField] private GameObject winMenu, loseMenu;
     [SerializeField] private TextMeshProUGUI lvText;
-    [SerializeField] private AudioSource win_audio, lose_audio;
+    [SerializeField] private GameObject nextBtn_win;
+    [SerializeField] private GameObject winMenu, loseMenu, pauseMenu;
+    [SerializeField] private RectTransform winPanel, losePanel, pausePanel;
+    [SerializeField] private float topPosY = 250f, middlePosY, tweenDuration = 0.2f;
+    private int maxLV = 20;
 
-    // Start is called before the first frame update
-    void Start()
+    [Header("Grid")]
+    [SerializeField] private Transform gridParent;
+    [SerializeField] private GameObject[] gridPrefabs;
+
+    protected override void Awake()
     {
-        if (instance != null && instance != this)
-            Destroy(this);
-        else instance = this;
-
-        if (lvText)
-            lvText.text = "LEVEL " + (level < 10 ? "0" + level : level);
-        Time.timeScale = 1f;
+        base.Awake();
+        level = PlayerPrefs.GetInt("CurrentLevel", 1);
+        LoadLevel(level);
     }
 
-    // Update is called once per frame
-    void Update()
+    async void Start()
     {
-
+        await HidePanel(winMenu, winPanel);
+        await HidePanel(loseMenu, losePanel);
+        await HidePanel(pauseMenu, pausePanel);
     }
 
-    public void StartGame() => SceneManager.LoadScene("StartGame");
-    public void PauseGame() => Time.timeScale = 0f;
-    public void ResumeGame() => Time.timeScale = 1f;
+    private void LoadLevel(int levelIndex)
+    {
+        maxLV = gridPrefabs.Length;
+        if (levelIndex < 1 || levelIndex > maxLV) levelIndex = 1;
+
+        if (levelIndex == maxLV && nextBtn_win) nextBtn_win.SetActive(false);
+
+        PlayerPrefs.SetInt("CurrentLevel", levelIndex);
+
+        if (lvText) lvText.text = "LEVEL " + level.ToString("00");
+        if (gridPrefabs.Length > 0) StartCoroutine(CreateGrid(levelIndex));
+    }
+
+    private IEnumerator CreateGrid(int levelIndex)
+    {
+        foreach (Transform child in gridParent)
+            Destroy(child.gameObject);
+        yield return null;// wait destroy complete
+
+        if (gridPrefabs[levelIndex - 1] != null)
+            Instantiate(gridPrefabs[levelIndex - 1], gridParent);
+    }
+
+    public void Home() => SceneManager.LoadScene("Home");
     public void Retry() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    public void NextLV() => SetCurrentLV(level + 1);
 
-    public void NextLV()
-    {
-        level++;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
-    }
-
-    public void GameWin()
-    {
-        UnlockNextLevel(level);
-        StartCoroutine(GameDeplay(winMenu, win_audio));
-    }
-
-    public void GameLose()
-    {
-        StartCoroutine(GameDeplay(loseMenu, lose_audio));
-    }
-
-    public IEnumerator GameDeplay(GameObject gameObject, AudioSource audio)
-    {
-        Time.timeScale = 0f;
-        yield return new WaitForSecondsRealtime(0.5f);
-        gameObject.SetActive(true);
-        if (SoundManager4.instance.soundEnabled)
-            audio.Play();
-    }
-
-    public void UnlockNextLevel(int currentLevel)
+    public void UnlockNextLevel()
     {
         int unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 1);
-        if (currentLevel >= unlockedLevel)
-        {
-            PlayerPrefs.SetInt("UnlockedLevel", currentLevel + 1);
-            PlayerPrefs.Save();
-        }
+        if (level >= unlockedLevel && level < maxLV)
+            PlayerPrefs.SetInt("UnlockedLevel", level + 1);
     }
 
     public void SetCurrentLV(int levelIndex)
     {
-        level = levelIndex;
-        SceneManager.LoadScene(levelIndex.ToString());
+        PlayerPrefs.SetInt("CurrentLevel", levelIndex);
+        PlayerPrefs.Save();
+        SceneManager.LoadScene("1");
+    }
+
+    public void PauseGame() => OpenMenu(pauseMenu, pausePanel, 1);
+
+    public async void ResumeGame()
+    {
+        SoundManager4.Instance.SoundClick();
+        await HidePanel(pauseMenu, pausePanel);
+        Time.timeScale = 1f;
+    }
+
+    public void GameWin()
+    {
+        UnlockNextLevel();
+        OpenMenu(winMenu, winPanel, 2);
+    }
+
+    public void GameLose() => OpenMenu(loseMenu, losePanel, 3);
+
+    private void OpenMenu(GameObject menu, RectTransform panel, int soundIndex)
+    {
+        SoundManager4.Instance.PlaySound(soundIndex);
+        ShowPanel(menu, panel);
+    }
+
+    private void ShowPanel(GameObject menu, RectTransform panel)
+    {
+        Time.timeScale = 0f;
+        menu.SetActive(true);
+        menu.GetComponent<CanvasGroup>().DOFade(1, tweenDuration).SetUpdate(true);
+        panel.DOAnchorPosY(middlePosY, tweenDuration).SetUpdate(true);
+    }
+
+    private async Task HidePanel(GameObject menu, RectTransform panel)
+    {
+        if (menu == null || panel == null) return;
+
+        menu.GetComponent<CanvasGroup>().DOFade(0, tweenDuration).SetUpdate(true);
+        await panel.DOAnchorPosY(topPosY, tweenDuration).SetUpdate(true).AsyncWaitForCompletion();
+        if (menu) menu.SetActive(false);
     }
 }

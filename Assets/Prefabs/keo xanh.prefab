@@ -83,7 +83,7 @@ GameObject:
   - component: {fileID: 8949347184535702542}
   m_Layer: 0
   m_Name: keo xanh
-  m_TagString: Candy3
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
